@@ -6,7 +6,7 @@ import os
 
 st.set_page_config(page_title="PipeGuard Dashboard", page_icon="🚰", layout="wide")
 
-st.title("🚰 PipeGuard: Fluid Flow Anomaly Detection")
+st.title("PipeGuard: Fluid Flow Anomaly Detection")
 st.markdown("Real-time monitoring dashboard powered by Darcy-Weisbach physics and Isolation Forest ML.")
 
 @st.cache_data
@@ -47,9 +47,9 @@ if df is not None and model is not None:
     is_anomaly = True if prediction == -1 else False
     
     if is_anomaly:
-        st.error("🚨 **HAZARD DETECTED:** Fluid flow anomaly isolated! Potential leak or blockage detected based on physical deviations. 🚨", icon="⚠️")
+        st.error("**HAZARD DETECTED:** Fluid flow anomaly isolated! Potential leak or blockage detected based on physical deviations. 🚨", icon="⚠️")
     else:
-        st.success("✅ **STATUS NORMAL:** Pipeline operating within standard physical parameters.", icon="🟢")
+        st.success("**STATUS NORMAL:** Pipeline operating within standard physical parameters.", icon="🟢")
 
     st.markdown("### Live Sensor Telemetry")
     col1, col2, col3, col4 = st.columns(4)
@@ -97,3 +97,33 @@ if df is not None and model is not None:
     )
     
     st.plotly_chart(fig, use_container_width=True)
+    st.divider()
+    st.markdown("### 📋 System Diagnostics & Incident Log")
+    col_health, col_log = st.columns([1, 2])
+    
+    total_recent = len(history_df)
+    total_anomalies = len(anomalies_df)
+    health_score = ((total_recent - total_anomalies) / total_recent) * 100 if total_recent > 0 else 100.0
+    
+    with col_health:
+        st.metric("System Health (Last 100)", f"{health_score:.1f}%")
+        
+        if health_score < 90:
+            st.warning("Maintenance recommended. High frequency of physical deviations.")
+        else:
+            st.success("System operating within acceptable bounds.")
+
+    with col_log:
+        st.metric("Hazards Detected (Current Window)", f"{total_anomalies}")
+        
+        if not anomalies_df.empty:
+            display_log = anomalies_df[['velocity', 'expected_pressure_drop', 'actual_pressure_drop']].copy()
+            display_log.rename(columns={
+                'velocity': 'Velocity (m/s)',
+                'expected_pressure_drop': 'Expected Drop (Pa)',
+                'actual_pressure_drop': 'Actual Drop (Pa)'
+            }, inplace=True)
+            
+            st.dataframe(display_log, use_container_width=True)
+        else:
+            st.info("No anomalies detected in the current time window.")
